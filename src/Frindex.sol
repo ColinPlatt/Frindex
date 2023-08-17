@@ -27,6 +27,7 @@ contract Frindex is ERC20, Ownable {
     FriendWeight[] public currentFriendWeights;
     FriendWeight[] public nextFriendWeights;
     uint32 lastUpdate; //timestamp of last weight update
+    uint8 public constant FEE = 100; //100bps = 1% on create/redeem
 
     constructor(address _friendShares) {
         friendShares = IFriendtechSharesV1(_friendShares);
@@ -99,6 +100,56 @@ contract Frindex is ERC20, Ownable {
             for (uint256 i = 0; i < length; i++) {
                 // we calculate half the reduced amount to arrive at the difference between the buy and sell price
                 value += friendShares.getPrice(friendShares.sharesSupply(shareSubjects[i]) - (shares[i] / 2), shares[i]);
+            }
+        }
+    }
+
+    //calculate the mid value of each share in the portfolio, exclusive of trading fees
+    function shareMidValues() public view returns (address[] memory shareSubjects, uint256[] memory shareValues) {
+        uint256[] memory shares;
+        (shareSubjects, shares) = getHoldings();
+        uint256 length = shareSubjects.length;
+
+        // we loop through all the holdings and calculate the value in ETH of each holding
+        unchecked {
+            for (uint256 i = 0; i < length; i++) {
+                shareValues[i] =
+                    friendShares.getPrice(friendShares.sharesSupply(shareSubjects[i]) - (shares[i] / 2), shares[i]);
+            }
+        }
+    }
+
+    function getTargetCurrentShareHoldings()
+        public
+        view
+        returns (address[] memory shareSubjects, uint256[] memory shares)
+    {
+        uint256 length = currentFriendWeights.length;
+        shareSubjects = new address[](length);
+        shares = new uint256[](length);
+        unchecked {
+            for (uint256 i = 0; i < length; i++) {
+                shareSubjects[i] = currentFriendWeights[i].subject;
+                shares[i] = friendShares.sharesSupply(shareSubjects[i]) * currentFriendWeights[i].weight / 10000;
+            }
+        }
+    }
+
+    function getRebalancingCurrentShareHoldings()
+        public
+        view
+        returns (address[] memory shareSubjects, int256[] memory sharesDeltas)
+    {
+        uint256[] memory sharesHeld;
+        (shareSubjects, sharesHeld) = shareMidValues();
+        (, uint256[] memory targetShares) = getTargetCurrentShareHoldings();
+
+        uint256 length = shareSubjects.length;
+        sharesDeltas = new int256[](length);
+
+        unchecked {
+            for (uint256 i = 0; i < length; i++) {
+                sharesDeltas[i] = int256(targetShares[i]) - int256(sharesHeld[i]);
             }
         }
     }
