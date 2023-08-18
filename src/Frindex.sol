@@ -15,6 +15,15 @@ interface IFriendtechSharesV1 {
     function sellShares(address sharesSubject, uint256 amount) external;
 }
 
+/**
+ * @title Frindex v0
+ * @author Colin Platt
+ * @notice WARNING: This contract has NOT been audited and is highly experimental.
+ *         Frindex is in no way intended to be used for investment purposes.
+ *         Interacting with this contract may lead to irreversible loss of funds.
+ *         Use at your own risk.
+ */
+
 contract Frindex is ERC20, Ownable {
     IFriendtechSharesV1 public immutable friendShares;
 
@@ -45,11 +54,11 @@ contract Frindex is ERC20, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     function name() public pure override returns (string memory) {
-        return "Frindex";
+        return "Frindex v0";
     }
 
     function symbol() public pure override returns (string memory) {
-        return unicode"🫂";
+        return unicode"🫂V0";
     }
 
     // prevent user from sending the token to the contract address
@@ -195,8 +204,8 @@ contract Frindex is ERC20, Ownable {
         SafeTransferLib.safeTransferETH(owner(), address(this).balance);
     }
 
-    function clearStuckShares(address sharesSubject) public onlyOwner {
-        friendShares.sellShares(sharesSubject, friendShares.sharesBalance(sharesSubject, address(this)));
+    function clearStuckShares(address sharesSubject, uint256 amount) public onlyOwner {
+        friendShares.sellShares(sharesSubject, amount);
     }
 
     function burnDelegateCallRights() public onlyOwner {
