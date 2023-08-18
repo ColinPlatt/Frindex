@@ -5,6 +5,7 @@ import {Script, console2} from "forge-std/Script.sol";
 
 import {FriendtechSharesV1} from "src/utils/FriendtechSharesV1.sol";
 import "src/Frindex.sol";
+import {Colin} from "src/Colin.sol";
 
 contract Frindexv0_Script is Script {
     FriendtechSharesV1 public ft = FriendtechSharesV1(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4);
@@ -54,5 +55,25 @@ contract Frindexv0_Script is Script {
     }
 }
 
-// forge script script/Frindex.s.sol:Frindexv0_Script --rpc-url $RPC_URL --sender $DEP -vvvv
+contract Colin_Script is Script {
+    FriendtechSharesV1 public ft = FriendtechSharesV1(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4);
+
+    Colin public colin;
+
+    function run() public {
+        uint256 pk = vm.envUint("PK");
+        vm.startBroadcast(pk);
+
+        colin = new Colin(address(ft));
+
+        Colin.ShareBlock[] memory blocks = new Colin.ShareBlock[](1);
+
+        blocks[0] = Colin.ShareBlock(0x7Ef8cc1C97F42CeF5eEF69577ec5c7788cA19a5F, 1);
+        colin.setBlockBuying(blocks);
+
+        vm.stopBroadcast();
+    }
+}
+
+// forge script script/Frindex.s.sol:Colin_Script --rpc-url $RPC_URL --sender $DEP --verify --verifier etherscan --chain-id 8453 --broadcast -vvvv
 // forge verify-contract --constructor-args $(cast abi-encode "constructor(address)" 0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4) 0x09b80F636802d98F19F8Bf1A3BE10FA41Cf45614 src/Frindex.sol:Frindex --verifier etherscan --chain-id 8453
